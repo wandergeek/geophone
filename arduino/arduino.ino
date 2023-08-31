@@ -1,25 +1,30 @@
 #include <Adafruit_ADS1X15.h>
 #include <ArduinoOSCWiFi.h>
 
- Adafruit_ADS1115 ads;  
+byte INDICATOR_LED = LED_BUILTIN;
+
+Adafruit_ADS1115 ads;  
 
 // WiFi stuff
-const char* ssid = "xxxxx";
-// const char* pwd = "xxxxx";
+const char* ssid = "ipsum";
+// const char* pwd = "testinggrounds";
 // const IPAddress ip(192, 168, 1, 250); //if you want to use these, uncomment this and the line further down
 // const IPAddress gateway(192, 168, 1, 1);
 // const IPAddress subnet(255, 255, 255, 0);
 
 // for ArduinoOSC
-const char* host = "255.255.255.255"; //this is a bit naughty, but it vastly simplifies things. If you want unicast, just chuck an IP here instead.
-const int send_port = 10000;
-const int publish_port = 10000;
-int16_t results;
+// const char* host = "255.255.255.255"; //this is a bit naughty, but it vastly simplifies things. If you want unicast, just chuck an IP here instead.
+const char* host = "192.168.2.14"; 
+const int send_port = 8000;
+const int publish_port = 8000;
+float results;
 
 
 void setup(void) {
+  pinMode(INDICATOR_LED, OUTPUT);
   Serial.begin(115200);
   Serial.println("Geophone waking up...");
+  Serial.println("attempting to connect to wifi network with ssid " + String(ssid));
 
   // The ADC input range (or gain) can be changed via the following
   // functions, but be careful never to exceed VDD +0.3V max, or to
@@ -47,7 +52,7 @@ ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
 #endif
    WiFi.begin(ssid);
 
-   // WiFi.begin(ssid, pwd); //if you're using a password, you'll need to instantiate this way and comment out the line above. I could write a switch but Im lazy as shit
+  //  WiFi.begin(ssid, pwd); //if you're using a password, you'll need to instantiate this way and comment out the line above. I could write a switch but Im lazy as shit
    // WiFi.config(ip, gateway, subnet); //uncomment this if you want to use static network settings
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
@@ -57,12 +62,15 @@ ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
     Serial.println(WiFi.localIP());
 
     OscWiFi.publish(host, publish_port, "/publish/analogInput", results)
-        ->setFrameRate(120.f); // this is probably too aggressive, but it's a good starting point for testing
+        ->setFrameRate(60.f); // this is probably too aggressive, but it's a good starting point for testing
 
+  digitalWrite(INDICATOR_LED, HIGH);
   }
 
 void loop(void) {
   OscWiFi.update();  
   float multiplier = 0.1875F; /* ADS1115  @ +/- 6.144V gain (16-bit results) */
   results = ads.readADC_Differential_0_1();
+  // results = map(ads.readADC_Differential_0_1(), -2500,2500,0, 1);
+  // Serial.println(results);
 }

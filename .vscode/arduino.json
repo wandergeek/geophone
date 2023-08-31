@@ -1,7 +1,0 @@
-{
-    "board": "esp32:esp32:node32s",
-    "port": "COM10",
-    "sketch": "geophone.ino",
-    "output": "build",
-    "configuration": "PartitionScheme=default,FlashFreq=80,UploadSpeed=921600,DebugLevel=none"
-}
