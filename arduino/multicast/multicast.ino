@@ -25,14 +25,14 @@ const char *oscTXAddress = "/geophone/raw";
 byte INDICATOR_LED = LED_BUILTIN;
 
 
-float fps=100;
+float fps=60;
 int delayTime=1000/fps;
 
 void setup() {
   pinMode(INDICATOR_LED, OUTPUT);
   Serial.begin(115200);
   Serial.println("Geophone waking up...");
-  Serial.println("attempting to connect to wifi network with ssid " + String(ssid));
+  Serial.println("attempting to connect to wifi network with ssid " + String(wifi_ssid));
   ads.setGain(GAIN_ONE);
 
   if (!ads.begin()) {
@@ -65,38 +65,10 @@ void setup() {
 
 }
 
-void loop() 
-{
-  exampleData[0]+=50;
-  oscObject.setValue((char*)"/geophone/raw", exampleData[0]);
-
+void loop() {
+  oscObject.setValue((char*)"/geophone/raw",ads.readADC_Differential_0_1());
   oscObject.generateOSCPacket((char*)"/geophone/raw");
   oscUDP.writeTo((uint8_t*)oscObject.txPacketBuffer, oscObject.txPacketBufferLength, multicast_ip_address, oscTXPort);
 
-  if(exampleData[0]>4096)
-  {
-    exampleData[0]=-4096;
-  }
-
-
   delay(delayTime);
-}
-
-//debug to check your packet
-void dumpString(char* tempString, unsigned short int stringLength)
-{
-  unsigned short int stringCnt=0;
-  for(stringCnt=0; stringCnt<stringLength; stringCnt++)
-  {
-    Serial.printf("[%d]->(%c)", tempString[stringCnt], tempString[stringCnt]);
-  }
-}
-
-void handleData(AsyncUDPPacket packet)
-{
-  memcpy(oscObject.packetBuffer, packet.data(), packet.length());
-  oscObject.currentPacketSize = packet.length();
-  oscObject.toggleState();
-  oscObject.parseOSCPacket();
-  Serial.printf("\r\n\tGot\t%d\tBytes", packet.length());
 }
