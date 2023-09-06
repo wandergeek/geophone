@@ -1,6 +1,0 @@
-{
-    "board": "esp32:esp32:node32s",
-    "port": "COM5",
-    "sketch": "geophone.ino",
-    "output": "./build"
-}

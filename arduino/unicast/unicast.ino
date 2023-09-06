@@ -45,7 +45,7 @@ void setup(void) {
     Serial.print("WiFi connected, IP = ");
     Serial.println(WiFi.localIP());
 
-    OscWiFi.publish(host, publish_port, "/publish/analogInput", results)->setFrameRate(60.f); 
+    OscWiFi.publish(host, publish_port, "/geophone/raw", results)->setFrameRate(60.f); 
 
     digitalWrite(INDICATOR_LED, HIGH);
   }
