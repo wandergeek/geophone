@@ -4,8 +4,8 @@
 Adafruit_ADS1115 ads;  
 byte INDICATOR_LED = LED_BUILTIN;
 
-const char* ssid = "ipsum";
-// const char* pwd = "testinggrounds";
+const char* wifi_ssid = "ipsum";
+const char* wifi_pwd = "";
 // const IPAddress ip(192, 168, 1, 250); //if you want to use these, uncomment this and the line further down
 // const IPAddress gateway(192, 168, 1, 1);
 // const IPAddress subnet(255, 255, 255, 0);
@@ -21,7 +21,7 @@ void setup(void) {
   pinMode(INDICATOR_LED, OUTPUT);
   Serial.begin(115200);
   Serial.println("Geophone waking up...");
-  Serial.println("attempting to connect to wifi network with ssid " + String(ssid));
+  Serial.println("attempting to connect to wifi network with ssid " + String(wifi_ssid));
   ads.setGain(GAIN_ONE);
 
   if (!ads.begin()) {
@@ -34,10 +34,15 @@ void setup(void) {
     delay(1000);
     WiFi.mode(WIFI_STA);
 #endif
-   WiFi.begin(ssid);
 
-  //  WiFi.begin(ssid, pwd); //if you're using a password, you'll need to instantiate this way and comment out the line above. I could write a switch but Im lazy as shit
+  if (strlen(wifi_pwd) == 0) {
+    WiFi.begin(wifi_ssid);
+  } else {
+    WiFi.begin(wifi_ssid, wifi_pwd);
+  }
+
    // WiFi.config(ip, gateway, subnet); //uncomment this if you want to use static network settings
+
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
         delay(500);
@@ -52,7 +57,6 @@ void setup(void) {
 
 void loop(void) {
   OscWiFi.update();  
-  float multiplier = 0.1875F; 
   results = ads.readADC_Differential_0_1();
   // Serial.println(results);
 }
