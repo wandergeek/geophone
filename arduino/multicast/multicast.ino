@@ -4,48 +4,46 @@
 #include "osc.h"
 #include <Adafruit_ADS1X15.h>
 
+byte INDICATOR_LED = LED_BUILTIN;
+
 //amp
 Adafruit_ADS1115 ads;  
 
 //WIFI
-const char *wifi_ssid = "TheNicks";
-const char *wifi_password = "xxx";
+const char *wifi_ssid = "ipsum";
+const char *wifi_password = ""; //leave blank if no password
 
 //Multicast address to TX to
 IPAddress multicast_ip_address = IPAddress(239,1,1,1);    //Muticast IP
-float exampleData[2] = {-4096.0,0};
 
 //OSC Vars
 osc oscObject;
 AsyncUDP oscUDP;
-unsigned int oscRXPort = 5555;    //port that this device will RECIVE packets on
 unsigned int oscTXPort = 8000;    //port that this device will SEND packets to
-const char *oscTXAddress = "/geophone/raw";
+char *oscTXAddress = "/geophone/raw";
 
-byte INDICATOR_LED = LED_BUILTIN;
-
-
-float fps=60;
-int delayTime=1000/fps;
+int FPS=60; //updates per second
 
 void setup() {
   pinMode(INDICATOR_LED, OUTPUT);
+
   Serial.begin(115200);
   Serial.println("Geophone waking up...");
   Serial.println("attempting to connect to wifi network with ssid " + String(wifi_ssid));
-  ads.setGain(GAIN_ONE);
 
+  ads.setGain(GAIN_ONE);
   if (!ads.begin()) {
     Serial.println("Failed to initialize ADS.");
     while (1);
   }
 
-  //Eable & connect to WIFI
   WiFi.mode(WIFI_STA);
- WiFi.begin(wifi_ssid, wifi_password);
-//  WiFi.begin(wifi_ssid);
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  if (strlen(wifi_password) == 0) {
+    WiFi.begin(wifi_ssid);
+  } else {
+    WiFi.begin(wifi_ssid, wifi_password);
+  }
+  while (WiFi.status() != WL_CONNECTED) {
     Serial.printf(".");
     delay(100);
   }
@@ -53,22 +51,21 @@ void setup() {
   Serial.printf("\r\n\tConnected to WIFI\t");
   Serial.print(WiFi.localIP());
 
-//Is this going to cause issues if something else publishes on the multicast ip? NPE or something?
-  //Set up UDP server for reciving UDP on port oscRXPort
-  // oscUDP.listenMulticast(multicast_ip_address, oscRXPort);
-  //Register method that handles INCOMING OSC data
-  // oscUDP.onPacket(handleData);
-
-  //Set up your OSC objects by adding in the controll names eg here we add /slider1 /slider2 /rotary1 /fader1
-  oscObject.addControll((char*)"/geophone/raw", 1, 'f');
+  oscObject.addControll(oscTXAddress, 1, 'f');
+  
   digitalWrite(INDICATOR_LED, HIGH);
-
 }
 
-void loop() {
-  oscObject.setValue((char*)"/geophone/raw",ads.readADC_Differential_0_1());
-  oscObject.generateOSCPacket((char*)"/geophone/raw");
-  oscUDP.writeTo((uint8_t*)oscObject.txPacketBuffer, oscObject.txPacketBufferLength, multicast_ip_address, oscTXPort);
 
-  delay(delayTime);
+unsigned long lastRunTime = 0;
+int minElapsedTime = 1000/FPS;
+void loop() {
+  unsigned long currentTime = millis();
+  if (currentTime - lastRunTime >= minElapsedTime) {
+    oscObject.setValue(oscTXAddress,ads.readADC_Differential_0_1());
+    oscObject.generateOSCPacket(oscTXAddress);
+    oscUDP.writeTo((uint8_t*)oscObject.txPacketBuffer, oscObject.txPacketBufferLength, multicast_ip_address, oscTXPort);
+
+    lastRunTime = currentTime;
+  }
 }
